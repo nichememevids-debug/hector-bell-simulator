@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Hector Bell Simulator</title>
+    <style>
+      :root {
+        --bg-1: #140e0d;
+        --bg-2: #261a17;
+        --bg-3: #533522;
+        --sand: #ceb07a;
+        --sand-dark: #9f6c3b;
+        --metal: #d9c29e;
+        --metal-deep: #83715c;
+        --bell-body: #d3b270;
+        --bell-edge: #6a432d;
+        --clapper: #efe0b6;
+        --panel: rgba(21, 16, 14, 0.72);
+        --gold: #f4d074;
+        --orange: #ff7d2d;
+        --red: #ff4d2d;
+        --text: #f7ebd9;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+      }
+
+      html, body {
+        margin: 0;
+        width: 100%;
+        min-height: 100%;
+        overflow: hidden;
+        font-family: Arial, Helvetica, sans-serif;
+        background:
+          radial-gradient(circle at top, rgba(255, 181, 94, 0.18), transparent 30%),
+          linear-gradient(to bottom, #1a1211 0%, #241b19 18%, #4a3125 52%, #2c201a 100%);
+        color: var(--text);
+      }
+
+      body {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+      }
+
+      .game {
+        position: relative;
+        width: min(100vw, 1000px);
+        height: min(100vh, 900px);
+        max-height: 100vh;
+        overflow: hidden;
+        background:
+          linear-gradient(180deg, rgba(0,0,0,0.14), rgba(0,0,0,0.32)),
+          radial-gradient(circle at center top, rgba(255, 179, 80, 0.14), transparent 28%),
+          linear-gradient(180deg, #111010 0%, #211815 25%, #4a3123 55%, #3b2925 100%);
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 28px 60px rgba(0,0,0,0.38);
+      }
+
+      .sun-glow {
+        position: absolute;
+        left: 50%;
+        top: 9%;
+        width: min(72vmin, 620px);
+        height: min(72vmin, 620px);
+        transform: translateX(-50%);
+        background: radial-gradient(circle, rgba(255, 186, 96, 0.3), rgba(255, 186, 96, 0.08) 32%, transparent 68%);
+        filter: blur(12px);
+        pointer-events: none;
+      }
+
+      .desk {
+        position: absolute;
+        left: 50%;
+        bottom: 11%;
+        width: min(84vw, 760px);
+        height: 120px;
+        transform: translateX(-50%);
+        border-radius: 18px 18px 8px 8px;
+        background: linear-gradient(180deg, #7c5a42, #563b31 26%, #2a1d1b 100%);
+        border: 2px solid rgba(40, 24, 18, 0.8);
+        box-shadow: inset 0 0 0 3px rgba(255,255,255,0.05), 0 18px 26px rgba(0,0,0,0.28);
+      }
+
+      .wheelchair {
+        position: absolute;
+        left: 50%;
+        bottom: 18%;
+        width: 210px;
+        height: 220px;
+        transform: translateX(-50%);
+        pointer-events: none;
+      }
+
+      .chair-body {
+        position: absolute;
+        left: 50%;
+        bottom: 72px;
+        width: 142px;
+        height: 84px;
+        transform: translateX(-50%);
+        background: linear-gradient(180deg, #403028 0%, #251d1a 100%);
+        border-radius: 20px 20px 16px 16px;
+        border: 2px solid rgba(16, 12, 10, 0.8);
+      }
+
+      .chair-body::before {
+        content: "";
+        position: absolute;
+        inset: 14px 20px auto 20px;
+        height: 24px;
+        background: rgba(255,255,255,0.04);
+        border-radius: 12px;
+      }
+
+      .arm-rest {
+        position: absolute;
+        bottom: 110px;
+        width: 22px;
+        height: 72px;
+        background: linear-gradient(180deg, #4e3b31, #241c1a);
+        border-radius: 12px;
+        border: 2px solid rgba(16,12,10,0.8);
+      }
+
+      .arm-rest.left { left: 32px; }
+      .arm-rest.right { right: 32px; }
+
+      .backrest {
+        position: absolute;
+        left: 50%;
+        bottom: 132px;
+        width: 118px;
+        height: 92px;
+        transform: translateX(-50%);
+        background: linear-gradient(180deg, #2d1f1d, #171312);
+        border-radius: 18px 18px 8px 8px;
+        border: 2px solid rgba(15,11,10,0.8);
+      }
+
+      .head {
+        position: absolute;
+        left: 50%;
+        bottom: 194px;
+        width: 52px;
+        height: 52px;
+        transform: translateX(-50%);
+        background: linear-gradient(180deg, #d8af86 0%, #bc8e6a 100%);
+        border-radius: 50%;
+        border: 3px solid rgba(92, 62, 43, 0.85);
+        box-shadow: inset -5px -8px 0 rgba(104, 66, 42, 0.08);
+      }
+
+      .head::before, .head::after {
+        content: "";
+        position: absolute;
+        top: 16px;
+        width: 5px;
+        height: 5px;
+        background: rgba(61, 34, 20, 0.9);
+        border-radius: 50%;
+      }
+
+      .head::before { left: 13px; }
+      .head::after { right: 13px; }
+
+      .mustache {
+        position: absolute;
+        left: 50%;
+        bottom: 175px;
+        width: 46px;
+        height: 16px;
+        transform: translateX(-50%);
+        border-radius: 12px;
+        background: linear-gradient(180deg, rgba(63, 40, 25, 0.96), rgba(36, 25, 20, 0.98));
+      }
+
+      .mustache::before, .mustache::after {
+        content: "";
+        position: absolute;
+        bottom: 1px;
+        width: 18px;
+        height: 14px;
+        background: rgba(41, 26, 20, 0.96);
+        border-radius: 10px;
+      }
+
+      .mustache::before { left: 2px; transform: rotate(-14deg); }
+      .mustache::after { right: 2px; transform: rotate(14deg); }
+
+      .body {
+        position: absolute;
+        left: 50%;
+        bottom: 88px;
+        width: 90px;
+        height: 94px;
+        transform: translateX(-50%);
+        background: linear-gradient(180deg, #4a494c 0%, #281e21 65%, #171214 100%);
+        border-radius: 22px 22px 16px 16px;
+        border: 2px solid rgba(16,12,14,0.8);
+      }
+
+      .wheel {
+        position: absolute;
+        bottom: 0;
+        width: 62px;
+        height: 62px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 34%, #848484 0, #3d393a 38%, #1e1b1d 56%, #111 100%);
+        border: 6px solid rgba(17,15,14,0.8);
+        box-shadow: inset 0 0 0 2px rgba(255,255,255,0.08), 0 10px 15px rgba(0,0,0,0.2);
+      }
+
+      .wheel.left { left: 18px; }
+      .wheel.right { right: 18px; }
+
+      .wheel::before {
+        content: "";
+        position: absolute;
+        inset: 15px;
+        border-radius: 50%;
+        border: 2px solid rgba(255,255,255,0.08);
+      }
+
+      .wheel::after {
+        content: "";
+        position: absolute;
+        inset: 24px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.1);
+      }
+
+      .bell-pad {
+        position: absolute;
+        left: 50%;
+        bottom: 104px;
+        width: 62px;
+        height: 18px;
+        transform: translateX(-50%);
+        background: linear-gradient(180deg, #b88c52, #664725);
+        border-radius: 10px;
+        border: 2px solid rgba(35,20,14,0.8);
+      }
+
+      .bell-area {
+        position: absolute;
+        left: 50%;
+        top: 52%;
+        transform: translate(-50%, -50%);
+        width: min(68vw, 470px);
+        height: min(54vw, 330px);
+        display: grid;
+        place-items: center;
+        z-index: 6;
+      }
+
+      .bell-shell {
+        position: relative;
+        width: min(56vw, 300px);
+        height: min(56vw, 300px);
+        border: none;
+        background: transparent;
+        padding: 0;
+        cursor: pointer;
+        touch-action: manipulation;
+        border-radius: 50%;
+      }
+
+      .bell-shell:focus-visible {
+        outline: 4px solid rgba(255, 214, 94, 0.7);
+        outline-offset: 12px;
+        border-radius: 50%;
+      }
+
+      .bell {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background:
+          radial-gradient(circle at 30% 26%, rgba(255,255,255,0.9), rgba(255,255,255,0.25) 12%, transparent 18%),
+          radial-gradient(circle at 50% 46%, #f2d694 0%, #d6b26b 18%, #c49a57 36%, #85613d 82%, #5b402a 100%);
+        border: 10px solid rgba(104, 69, 41, 0.9);
+        box-shadow: inset 0 0 0 10px rgba(255,255,255,0.12), inset -14px -18px 18px rgba(67,37,21,0.28), 0 25px 30px rgba(0,0,0,0.28);
+      }
+
+      .bell::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: -30px;
+        width: 18px;
+        height: 70px;
+        transform: translateX(-50%);
+        border-radius: 12px;
+        background: linear-gradient(180deg, #ebd6a8 0%, #a06d33 100%);
+        box-shadow: inset 0 0 0 2px rgba(61,38,23,0.4);
+      }
+
+      .bell::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: -52px;
+        width: 52px;
+        height: 32px;
+        transform: translateX(-50%);
+        border-radius: 18px 18px 12px 12px;
+        background: linear-gradient(180deg, #d6c19d, #a77742);
+        border: 3px solid rgba(62,42,26,0.8);
+      }
+
+      .bell-top {
+        position: absolute;
+        left: 50%;
+        top: 36%;
+        width: 48%;
+        height: 28%;
+        transform: translateX(-50%);
+        border-radius: 50%;
+        border: 12px solid rgba(96, 67, 43, 0.86);
+        background: rgba(255,240,201,0.08);
+      }
+
+      .bell-label {
+        position: absolute;
+        left: 50%;
+        bottom: 25%;
+        width: 58%;
+        height: 18%;
+        transform: translateX(-50%);
+        border-radius: 40px;
+        background: linear-gradient(180deg, rgba(68,41,27,0.93), rgba(29,17,10,0.93));
+        box-shadow: inset 0 0 0 3px rgba(255,255,255,0.05);
+      }
+
+      .bell-label::before {
+        content: "RING";
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-size: clamp(0.78rem, 2vw, 1.2rem);
+        font-weight: 900;
+        letter-spacing: 0.22em;
+        color: rgba(255,230,170,0.92);
+        text-shadow: 0 2px 0 rgba(0,0,0,0.4);
+      }
+
+      .bell-clapper {
+        position: absolute;
+        left: 50%;
+        bottom: 20%;
+        width: 18%;
+        height: 18%;
+        transform: translateX(-50%);
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #fff9e7, #d8c19c 42%, #8d6b45 100%);
+        border: 4px solid rgba(91, 60, 33, 0.9);
+      }
+
+      .ringing {
+        animation: bellRing 0.45s cubic-bezier(.2,.9,.25,1);
+      }
+
+      @keyframes bellRing {
+        0% { transform: rotate(0deg) scale(1); }
+        12% { transform: rotate(-8deg) scale(1.05); }
+        26% { transform: rotate(8deg) scale(1.08); }
+        42% { transform: rotate(-6deg) scale(1.04); }
+        62% { transform: rotate(7deg) scale(1.06); }
+        100% { transform: rotate(0deg) scale(1); }
+      }
+
+      .counter-box {
+        position: absolute;
+        left: 50%;
+        bottom: 8%;
+        transform: translateX(-50%);
+        z-index: 9;
+        min-width: 170px;
+        padding: 10px 18px 12px;
+        border-radius: 16px;
+        background: rgba(24, 17, 14, 0.74);
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 16px 28px rgba(0,0,0,0.18);
+      }
+
+      .counter-label {
+        display: block;
+        text-align: center;
+        font-size: 0.72rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(245,220,175,0.8);
+        margin-bottom: 6px;
+      }
+
+      .counter-value {
+        display: block;
+        text-align: center;
+        font-size: clamp(2rem, 5vw, 3rem);
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        color: #fdf0d3;
+        text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      }
+
+      .reset-btn {
+        position: absolute;
+        right: clamp(12px, 2vw, 28px);
+        top: clamp(12px, 2vw, 28px);
+        z-index: 12;
+        padding: 12px 16px;
+        border: none;
+        border-radius: 999px;
+        background: linear-gradient(180deg, rgba(247,206,103,0.95), rgba(188,112,50,0.9));
+        color: #1b140e;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        box-shadow: 0 12px 18px rgba(0,0,0,0.2);
+        cursor: pointer;
+      }
+
+      .reset-btn:active {
+        transform: translateY(1px) scale(0.99);
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        z-index: 20;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.35s ease;
+      }
+
+      .overlay.visible {
+        opacity: 1;
+      }
+
+      .thinking-box {
+        position: relative;
+        width: min(82vw, 540px);
+        padding: 28px 24px 20px;
+        border-radius: 30px;
+        background: rgba(15,11,9,0.64);
+        border: 2px solid rgba(255,222,130,0.36);
+        box-shadow: 0 30px 60px rgba(0,0,0,0.28);
+        text-align: center;
+      }
+
+      .thinking-box h2 {
+        margin: 0;
+        color: #f5dc98;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font-size: clamp(1.2rem, 4vw, 2.2rem);
+        text-shadow: 0 0 18px rgba(255, 204, 96, 0.28);
+      }
+
+      .dots {
+        display: inline-flex;
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: rgba(245,214,127,0.9);
+        animation: pulse 1.2s ease-in-out infinite;
+        box-shadow: 0 0 18px rgba(255,214,100,0.5);
+      }
+
+      .dot:nth-child(2) { animation-delay: 0.15s; }
+      .dot:nth-child(3) { animation-delay: 0.3s; }
+
+      @keyframes pulse {
+        0%, 100% { transform: scale(0.65); opacity: 0.55; }
+        50% { transform: scale(1.2); opacity: 1; }
+      }
+
+      .thought-bubble {
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: rgba(247,219,128,0.18);
+        border: 2px solid rgba(247,219,128,0.42);
+        box-shadow: 0 0 18px rgba(255,204,96,0.2);
+        animation: floatBubble 2.2s ease-in-out infinite;
+      }
+
+      .thought-bubble.one { left: 12%; top: 18%; }
+      .thought-bubble.two { right: 15%; top: 24%; animation-delay: 0.7s; }
+      .thought-bubble.three { left: 20%; bottom: 12%; animation-delay: 1.1s; }
+      .thought-bubble.four { right: 24%; bottom: 18%; animation-delay: 1.4s; }
+
+      @keyframes floatBubble {
+        0%, 100% { transform: translateY(0px) scale(1); opacity: 0.6; }
+        50% { transform: translateY(-16px) scale(1.12); opacity: 1; }
+      }
+
+      .explosion-wrap {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        pointer-events: none;
+      }
+
+      .explosion {
+        position: relative;
+        width: min(76vmin, 590px);
+        height: min(76vmin, 590px);
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 247, 200, 0.96) 0%, rgba(255, 183, 77, 0.9) 14%, rgba(255, 120, 42, 0.72) 26%, rgba(255, 68, 35, 0.25) 52%, rgba(255, 68, 35, 0) 72%);
+        box-shadow: 0 0 90px rgba(255, 154, 64, 0.34);
+        transform: scale(0.25);
+        opacity: 0;
+        animation: blast 1.08s ease-out forwards;
+      }
+
+      .explosion::before,
+      .explosion::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 3px solid rgba(255,227,144,0.75);
+        opacity: 0;
+        animation: ring 1.08s ease-out forwards;
+      }
+
+      .explosion::after {
+        animation-delay: 0.1s;
+        transform: scale(1.2);
+      }
+
+      @keyframes blast {
+        0% { opacity: 0; transform: scale(0.2); }
+        10% { opacity: 1; }
+        50% { opacity: 1; }
+        100% { opacity: 0; transform: scale(1.7); }
+      }
+
+      @keyframes ring {
+        0% { opacity: 0.9; transform: scale(0.55); }
+        100% { opacity: 0; transform: scale(1.35); }
+      }
+
+      .title-card {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: rgba(10, 9, 8, 0.76);
+        z-index: 25;
+        opacity: 0;
+        transform: scale(0.96);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+      }
+
+      .title-card.visible {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      .title-panel {
+        position: relative;
+        width: min(82vw, 700px);
+        text-align: center;
+        padding: 30px clamp(20px, 4vw, 36px);
+        background: linear-gradient(180deg, rgba(52, 29, 19, 0.86), rgba(20,17,14,0.9));
+        border: 2px solid rgba(255,216,120,0.35);
+        border-radius: 30px;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.02);
+      }
+
+      .title-panel::before {
+        content: "";
+        position: absolute;
+        inset: 16px;
+        border-radius: 24px;
+        border: 1px solid rgba(255,255,255,0.08);
+      }
+
+      .title-panel h1 {
+        margin: 0;
+        font-size: clamp(2rem, 6vw, 4rem);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #f8e3a4;
+        text-shadow: 0 8px 22px rgba(0,0,0,0.28);
+      }
+
+      .title-panel p {
+        margin: 18px auto 0;
+        max-width: 46ch;
+        font-size: clamp(0.76rem, 2vw, 1rem);
+        line-height: 1.7;
+        color: rgba(245,226,175,0.9);
+      }
+
+      @media (max-width: 640px) {
+        .bell-area { top: 46%; }
+        .wheelchair { transform: translateX(-50%) scale(0.9); bottom: 15%; }
+        .desk { bottom: 7%; }
+        .counter-box { bottom: 7%; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .ringing, .dot, .thought-bubble, .explosion, .title-card, .overlay { animation: none !important; transition: none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game">
+      <div class="scene">
+        <div class="sun-glow"></div>
+
+        <div class="wheelchair" aria-hidden="true">
+          <div class="arm-rest left"></div>
+          <div class="arm-rest right"></div>
+          <div class="backrest"></div>
+          <div class="head"></div>
+          <div class="mustache"></div>
+          <div class="body"></div>
+          <div class="bell-pad"></div>
+          <div class="wheel left"></div>
+          <div class="wheel right"></div>
+        </div>
+
+        <div class="desk" aria-hidden="true"></div>
+
+        <div class="bell-area">
+          <button id="bellButton" class="bell-shell" aria-label="Ring the bell">
+            <span class="bell" id="bell">
+              <span class="bell-top"></span>
+              <span class="bell-label"></span>
+              <span class="bell-clapper"></span>
+            </span>
+          </button>
+        </div>
+
+        <div class="counter-box" aria-live="polite">
+          <span class="counter-label">Bell taps</span>
+          <span id="counter" class="counter-value">0</span>
+        </div>
+
+        <button id="resetBtn" class="reset-btn" type="button">Reset</button>
+
+        <div id="thinkingOverlay" class="overlay" aria-live="polite">
+          <div class="thinking-box">
+            <div class="thought-bubble one"></div>
+            <div class="thought-bubble two"></div>
+            <div class="thought-bubble three"></div>
+            <div class="thought-bubble four"></div>
+            <h2>Hector is thinking...</h2>
+            <div class="dots" aria-hidden="true">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </div>
+          </div>
+        </div>
+
+        <div id="explosionOverlay" class="overlay" aria-live="assertive">
+          <div class="explosion-wrap">
+            <div class="explosion"></div>
+          </div>
+        </div>
+
+        <div id="titleCard" class="title-card" aria-live="polite">
+          <div class="title-panel">
+            <h1>HECTOR BELL SIMULATOR</h1>
+            <p>Fan-made parody — not affiliated with or endorsed by the original shows.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const bellButton = document.getElementById('bellButton');
+      const bell = document.getElementById('bell');
+      const counter = document.getElementById('counter');
+      const resetBtn = document.getElementById('resetBtn');
+      const thinkingOverlay = document.getElementById('thinkingOverlay');
+      const explosionOverlay = document.getElementById('explosionOverlay');
+      const titleCard = document.getElementById('titleCard');
+
+      const triggerThreshold = 12;
+      let taps = 0;
+      let triggered = false;
+      let audioCtx;
+
+      function getAudioContext() {
+        if (!audioCtx) {
+          const AudioCtor = window.AudioContext || window.webkitAudioContext;
+          if (!AudioCtor) return null;
+          audioCtx = new AudioCtor();
+        }
+        return audioCtx;
+      }
+
+      function playDing() {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(860, now);
+        osc.frequency.exponentialRampToValueAtTime(360, now + 0.18);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.085, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      }
+
+      function updateCounter() {
+        counter.textContent = String(taps);
+      }
+
+      function restartBellAnimation() {
+        bell.classList.remove('ringing');
+        void bell.offsetWidth;
+        bell.classList.add('ringing');
+      }
+
+      function triggerSpecialSequence() {
+        triggered = true;
+        bellButton.disabled = true;
+        bellButton.setAttribute('aria-disabled', 'true');
+        thinkingOverlay.classList.add('visible');
+
+        setTimeout(() => {
+          thinkingOverlay.classList.remove('visible');
+          explosionOverlay.classList.add('visible');
+        }, 1700);
+
+        setTimeout(() => {
+          explosionOverlay.classList.remove('visible');
+          titleCard.classList.add('visible');
+        }, 3000);
+      }
+
+      function ringBell() {
+        if (triggered) return;
+
+        taps += 1;
+        updateCounter();
+        restartBellAnimation();
+        playDing();
+
+        if (taps >= triggerThreshold) {
+          triggerSpecialSequence();
+        }
+      }
+
+      function resetGame() {
+        taps = 0;
+        triggered = false;
+        updateCounter();
+
+        bellButton.disabled = false;
+        bellButton.setAttribute('aria-disabled', 'false');
+
+        thinkingOverlay.classList.remove('visible');
+        explosionOverlay.classList.remove('visible');
+        titleCard.classList.remove('visible');
+
+        bell.classList.remove('ringing');
+      }
+
+      bellButton.addEventListener('pointerdown', ringBell);
+      bellButton.addEventListener('click', (event) => event.preventDefault());
+
+      bellButton.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          ringBell();
+        }
+      });
+
+      resetBtn.addEventListener('click', resetGame);
+    </script>
+  </body>
+</html>
